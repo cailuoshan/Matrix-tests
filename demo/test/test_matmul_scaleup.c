@@ -18,66 +18,20 @@ float* read_matrix_file(const char* file_name, int rows, int cols) {
         return NULL;
     }
     // 分配一维数组的内存
-    float *matrix = malloc(rows * cols * sizeof(float));
+    int size = rows * cols;
+    float *matrix = malloc(size * sizeof(float));
     if (!matrix) {
         perror("Failed to allocate memory for matrix");
         fclose(file);
         return NULL;
     }
 
-    char element[MAX_ELEMENT_LENGTH];
-    int c;
-    int i = 0;
-    int elementIndex = 0;
-    char *end;
-
-    while ((c = fgetc(file)) != EOF) {
-        if (c == ',') {
-            // 遇到逗号，表示一个元素结束
-            element[i] = '\0';
-            matrix[elementIndex++] = strtof(element, &end);
-            if (end == element) {
-                printf("Error: can not translate str to float.\n");
-                free(matrix);
-                fclose(file);
-                return NULL;
-            }
-            i = 0;
-        } else if (c == '\n' || c == '\r') {
-            // 遇到换行符，表示一行结束
-            if (i > 0) {
-                element[i] = '\0';
-                matrix[elementIndex++] = strtof(element, &end);
-                if (end == element) {
-                    printf("Error: can not translate str to float.\n");
-                    free(matrix);
-                    fclose(file);
-                    return NULL;
-                }
-                i = 0;
-            }
-        } else {
-            // 其他字符，认为是数字的一部分
-            element[i++] = (char)c;
-            if (i >= sizeof(element)) {
-                fprintf(stderr, "Error: number too long in CSV file.\n");
-                free(matrix);
-                fclose(file);
-                return NULL;
-            }
-        }
-    }
-
-    // 如果最后一行没有以换行符结束，需要处理最后一个元素
-    if (i > 0) {
-        element[i] = '\0';
-        matrix[elementIndex++] = strtof(element, &end);
-        if (end == element) {
-            printf("Error: can not translate str to float.\n");
-            free(matrix);
-            fclose(file);
-            return NULL;
-        }
+    size_t bytesRead = fread(matrix, sizeof(float), size, file);
+    if (bytesRead != size) {
+        perror("Unable to read matrix from file");
+        free(matrix);
+        fclose(file);
+        return NULL;
     }
 
     fclose(file);
@@ -96,14 +50,14 @@ void trap(int trap_code) {
 
 
 int main() {
-  const int M = 32;
-  const int K = 32;
-  const int N = 32;
+  const int M = 4096;
+  const int K = 4096;
+  const int N = 1024;
   
-  float *src1 = read_matrix_file("/root/matrix-tests/matrixA.csv", M, K);
-  float *src2 = read_matrix_file("matrixB.csv", K, N);
-  float *dest = read_matrix_file("matrixC.csv", M, N);
-  float *answ = read_matrix_file("resultC.csv", M, N);
+  float *src1 = read_matrix_file("matrixA.bin", M, K);
+  float *src2 = read_matrix_file("matrixB.bin", K, N);
+  float *dest = read_matrix_file("matrixC.bin", M, N);
+  float *answ = read_matrix_file("resultC.bin", M, N);
   
   create_tensor4d(matmul_src1, (void *)src1, 1, M, K, 1);
   create_tensor4d(matmul_src2, (void *)src2, 1, K, N, 1);
