@@ -84,6 +84,16 @@ float* read_matrix_file(const char* file_name, int rows, int cols) {
     return matrix;
 }
 
+void trap(int trap_code) {
+    asm volatile (
+        "mv a0, %0\n"
+        ".word 0x5006b\n"
+        :
+        : "r"(trap_code)
+        : "a0"
+    );
+}
+
 
 int main() {
   const int M = 32;
@@ -109,5 +119,7 @@ int main() {
   free(src2);
   free(dest);
   free(answ);
+  
+  trap(0);
   return 0;
 }
